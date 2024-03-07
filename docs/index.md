@@ -6,9 +6,11 @@ description: |-
   Interact with Render. https://render.com/
 ---
 
-# render Provider
+# Render Provider
+This is a custom Terraform provider for [Render](https://render.com/).
+This provider was prepared as part of the [Implementing a Provider Using the Terraform Plugin Framework tutorial](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider). The code is compiled according to the principle of human readability. You can use this provider to see in detail how the Terraform provider works.
 
-
+Also this provider allows import the existing infrastucture to the Terrafom code.
 
 ## Example Usage
 
