@@ -1,5 +1,9 @@
 # Terraform Provider Render (Terraform Plugin Framework)
 
+## Overview
+This repository is a custom Terraform provider for [Render](https://render.com/).
+This repository was prepared as part of the [Implementing a Provider Using the Terraform Plugin Framework tutorial](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider). The code is compiled according to the principle of human readability. You can use this repository to see in detail how the Terraform provider works.
+
 _This repository is built on the [Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework)._
 
 - A resource and a data source (`internal/provider/`),
@@ -8,8 +12,8 @@ _This repository is built on the [Terraform Plugin Framework](https://github.com
 
 ## Requirements
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.7
-- [Go](https://golang.org/doc/install) >= 1.22
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
+- [Go](https://golang.org/doc/install) >= 1.19
 
 ## Building The Provider
 
@@ -42,3 +46,6 @@ If you wish to work on the provider, you'll first need [Go](http://www.golang.or
 To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 To generate or update documentation, run `go generate`.
+
+## TODO:
+- Create a Render REST API server to run tests locally using a Docker container.
