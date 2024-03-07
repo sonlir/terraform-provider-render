@@ -175,8 +175,8 @@ github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5g
 github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/skeema/knownhosts v1.2.1 h1:SHWdIUa82uGZz+F+47k8SY4QhhI291cXCpopT1lK2AQ=
 github.com/skeema/knownhosts v1.2.1/go.mod h1:xYbVRSPxqBZFrdmDyMmsOs+uX1UZC3nTN3ThzgDxUwo=
-github.com/sonlir/render-client-go v0.0.0-20240305135954-f46acc8851a5 h1:NjZn2sp5ILd3P6ytV0EVyC3TjP0WkmxvD4rG77vwD74=
-github.com/sonlir/render-client-go v0.0.0-20240305135954-f46acc8851a5/go.mod h1:wQmhQ8l53WwP/T14XoJGK8agShBgyiHnlN9Fyjc3xa8=
+github.com/sonlir/render-client-go v0.0.0-20240307132307-2ebef0129a0f h1:CqdS9Id/9xOeYJMHm0vKJ3HIRv2rauSYDTyRJHCy+ZQ=
+github.com/sonlir/render-client-go v0.0.0-20240307132307-2ebef0129a0f/go.mod h1:wQmhQ8l53WwP/T14XoJGK8agShBgyiHnlN9Fyjc3xa8=
 github.com/spf13/cast v1.3.1/go.mod h1:Qx5cxh0v+4UWYiBimWS+eyWzqEqokIECu5etghLkUJE=
 github.com/spf13/cast v1.5.0 h1:rj3WzYc11XZaIZMPKmwP96zkFEnnAmV8s6XbB2aY32w=
 github.com/spf13/cast v1.5.0/go.mod h1:SpXXQ5YoyJw6s3/6cMTQuxvgRl3PCJiyaX9p6b155UU=

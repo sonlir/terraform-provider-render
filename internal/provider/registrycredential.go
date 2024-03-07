@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -14,7 +11,6 @@ import (
 	"github.com/sonlir/render-client-go"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
 var (
 	_ resource.Resource                = &RegistryCredential{}
 	_ resource.ResourceWithConfigure   = &RegistryCredential{}
@@ -29,7 +25,6 @@ type RegistryCredential struct {
 	client *render.Client
 }
 
-// RegistryCredentialModel describes the data source data model.
 type RegistryCredentialModel struct {
 	ID        types.String `tfsdk:"id"`
 	Name      types.String `tfsdk:"name"`
@@ -45,9 +40,7 @@ func (r *RegistryCredential) Metadata(_ context.Context, req resource.MetadataRe
 
 func (r *RegistryCredential) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Create registry credential",
-
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Unique identifier for this credential",
@@ -58,7 +51,7 @@ func (r *RegistryCredential) Schema(_ context.Context, _ resource.SchemaRequest,
 				Required:            true,
 			},
 			"registry": schema.StringAttribute{
-				MarkdownDescription: "The registry to use this credential with. Valid values are GITHUB, GITLAB, DOCKER.",
+				MarkdownDescription: "The registry to use this credential with. Valid values are `GITHUB`, `GITLAB`, `DOCKER`.",
 				Required:            true,
 			},
 			"username": schema.StringAttribute{
@@ -79,7 +72,6 @@ func (r *RegistryCredential) Schema(_ context.Context, _ resource.SchemaRequest,
 }
 
 func (r *RegistryCredential) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -99,7 +91,6 @@ func (r *RegistryCredential) Configure(ctx context.Context, req resource.Configu
 }
 
 func (r *RegistryCredential) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Retrieve values from plan
 	var plan RegistryCredentialModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -114,7 +105,6 @@ func (r *RegistryCredential) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	// Generate API request body from plan
 	data := render.RegistryCredentialData{
 		Name:      plan.Name.ValueString(),
 		Registry:  plan.Registry.ValueString(),
@@ -137,7 +127,6 @@ func (r *RegistryCredential) Create(ctx context.Context, req resource.CreateRequ
 	plan.Registry = types.StringValue(registryCredential.Registry)
 	plan.Username = types.StringValue(registryCredential.Username)
 
-	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -149,13 +138,11 @@ func (r *RegistryCredential) Create(ctx context.Context, req resource.CreateRequ
 func (r *RegistryCredential) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state RegistryCredentialModel
 
-	// Get current state
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Read Render data into the model
 	registryCredential, err := r.client.GetRegistryCredential(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -165,13 +152,11 @@ func (r *RegistryCredential) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	// Write Render data into the model
 	state.ID = types.StringValue(registryCredential.ID)
 	state.Name = types.StringValue(registryCredential.Name)
 	state.Registry = types.StringValue(registryCredential.Registry)
 	state.Username = types.StringValue(registryCredential.Username)
 
-	// Save data into Terraform state
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -180,7 +165,6 @@ func (r *RegistryCredential) Read(ctx context.Context, req resource.ReadRequest,
 }
 
 func (r *RegistryCredential) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan
 	var plan, state RegistryCredentialModel
 	diags := req.Plan.Get(ctx, &plan)
 	_ = req.State.Get(ctx, &state)
@@ -196,7 +180,6 @@ func (r *RegistryCredential) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	// Generate API request body from plan
 	data := render.RegistryCredentialData{
 		Name:      plan.Name.ValueString(),
 		Registry:  plan.Registry.ValueString(),
@@ -219,7 +202,6 @@ func (r *RegistryCredential) Update(ctx context.Context, req resource.UpdateRequ
 	plan.Registry = types.StringValue(registryCredential.Registry)
 	plan.Username = types.StringValue(registryCredential.Username)
 
-	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

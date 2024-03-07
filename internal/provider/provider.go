@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -18,19 +15,13 @@ import (
 	"github.com/sonlir/render-client-go"
 )
 
-// Ensure RenderProvider satisfies various provider interfaces.
 var _ provider.Provider = &RenderProvider{}
 var _ provider.ProviderWithFunctions = &RenderProvider{}
 
-// RenderProvider defines the provider implementation.
 type RenderProvider struct {
-	// version is set to the provider version on release, "dev" when the
-	// provider is built and ran locally, and "test" when running acceptance
-	// testing.
 	version string
 }
 
-// RenderProviderModel describes the provider data model.
 type RenderProviderModel struct {
 	APIKey types.String `tfsdk:"api_key"`
 }
@@ -44,7 +35,7 @@ func (p *RenderProvider) Schema(ctx context.Context, req provider.SchemaRequest,
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"api_key": schema.StringAttribute{
-				MarkdownDescription: "The Render API key to use for authentication. May also be provided via RENDER_API_KEY environment variable.",
+				MarkdownDescription: "The Render API key to use for authentication. May also be provided via `RENDER_API_KEY` environment variable.",
 				Optional:            true,
 				Sensitive:           true,
 			},
@@ -63,9 +54,6 @@ func (p *RenderProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	// If practitioner provided a configuration value for any of the
-	// attributes, it must be a known value.
-
 	if config.APIKey.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("api_key"),
@@ -79,17 +67,11 @@ func (p *RenderProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	// Default values to environment variables, but override
-	// with Terraform configuration value if set.
-
 	apiKey := os.Getenv("RENDER_API_KEY")
 
 	if !config.APIKey.IsNull() {
 		apiKey = config.APIKey.ValueString()
 	}
-
-	// If any of the expected configurations are missing, return
-	// errors with provider-specific guidance.
 
 	if apiKey == "" {
 		resp.Diagnostics.AddAttributeError(
@@ -105,7 +87,6 @@ func (p *RenderProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	// Create a new Render client using the configuration values
 	client, err := render.NewClient(&apiKey, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -117,8 +98,6 @@ func (p *RenderProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	// Make the Render client available during DataSource and Resource
-	// type Configure methods.
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }
@@ -135,6 +114,8 @@ func (p *RenderProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewOwnersDataSource,
 		NewRegistryCredentialDataSource,
 		NewRegistryCredentialsDataSource,
+		NewWebServiceDataSource,
+		NewWebServicesDataSource,
 	}
 }
 

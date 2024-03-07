@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -13,7 +10,6 @@ import (
 	"github.com/sonlir/render-client-go"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
 var (
 	_ datasource.DataSource              = &RegistryCredentialsDataSource{}
 	_ datasource.DataSourceWithConfigure = &RegistryCredentialsDataSource{}
@@ -27,7 +23,6 @@ type RegistryCredentialsDataSource struct {
 	client *render.Client
 }
 
-// RegistryCredentialsDataSourceModel describes the data source data model.
 type RegistryCredentialsDataSourceModel struct {
 	RegistryCredentials []RegistryCredentialDataSourceModel `tfsdk:"registrycredentials"`
 }
@@ -38,7 +33,6 @@ func (d *RegistryCredentialsDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *RegistryCredentialsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Get a list of registry credentials.",
 		Attributes: map[string]schema.Attribute{
 			"registrycredentials": schema.ListNestedAttribute{
@@ -54,7 +48,7 @@ func (d *RegistryCredentialsDataSource) Schema(ctx context.Context, req datasour
 							Computed:            true,
 						},
 						"registry": schema.StringAttribute{
-							MarkdownDescription: "The registry to use this credential with. Valid values are GITHUB, GITLAB, DOCKER.",
+							MarkdownDescription: "The registry to use this credential with. Valid values are `GITHUB`, `GITLAB`, `DOCKER`.",
 							Computed:            true,
 						},
 						"username": schema.StringAttribute{
@@ -69,7 +63,6 @@ func (d *RegistryCredentialsDataSource) Schema(ctx context.Context, req datasour
 }
 
 func (d *RegistryCredentialsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -91,7 +84,6 @@ func (d *RegistryCredentialsDataSource) Configure(ctx context.Context, req datas
 func (d *RegistryCredentialsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state RegistryCredentialsDataSourceModel
 
-	// Read Render data into the model
 	registryCredentials, err := d.client.GetRegistryCredentials()
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -101,7 +93,6 @@ func (d *RegistryCredentialsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	// Write Render data into the model
 	for _, registryCredential := range *registryCredentials {
 		registryCredentialState := RegistryCredentialDataSourceModel{
 			ID:       types.StringValue(registryCredential.ID),
@@ -112,7 +103,6 @@ func (d *RegistryCredentialsDataSource) Read(ctx context.Context, req datasource
 		state.RegistryCredentials = append(state.RegistryCredentials, registryCredentialState)
 	}
 
-	// Save data into Terraform state
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
