@@ -395,7 +395,7 @@ func makeWebServiceDataSourceModel(state *ServiceDataSourceModel, service *rende
 	state.Type = types.StringValue(service.Type)
 	state.UpdatedAt = types.StringValue(service.UpdatedAt)
 
-	webServiceDetails.NumInstances = types.Int64Value(int64(service.ServiceDetails.NumInstances))
+	webServiceDetails.NumInstances = types.Int64Value(service.ServiceDetails.NumInstances)
 	webServiceDetails.Env = types.StringValue(service.ServiceDetails.Env)
 	webServiceDetails.HealthCheckPath = types.StringValue(service.ServiceDetails.HealthCheckPath)
 	webServiceDetails.Plan = types.StringValue(service.ServiceDetails.Plan)
@@ -404,7 +404,7 @@ func makeWebServiceDataSourceModel(state *ServiceDataSourceModel, service *rende
 	webServiceDetails.URL = types.StringValue(service.ServiceDetails.URL)
 	for _, openPort := range service.ServiceDetails.OpenPorts {
 		webServiceDetails.OpenPorts = append(webServiceDetails.OpenPorts, OpenPort{
-			Port:     types.Int64Value(int64(openPort.Port)),
+			Port:     types.Int64Value(openPort.Port),
 			Protocol: types.StringValue(openPort.Protocol),
 		})
 	}
@@ -435,22 +435,22 @@ func makeWebServiceDataSourceModel(state *ServiceDataSourceModel, service *rende
 			ID:        types.StringValue(service.ServiceDetails.Disk.Id),
 			Name:      types.StringValue(service.ServiceDetails.Disk.Name),
 			MountPath: types.StringValue(service.ServiceDetails.Disk.MountPath),
-			SizeGB:    types.Int64Value(int64(service.ServiceDetails.Disk.SizeGB)),
+			SizeGB:    types.Int64Value(service.ServiceDetails.Disk.SizeGB),
 		}
 	}
 	if service.ServiceDetails.Autoscaling != nil {
 		webServiceDetails.Autoscaling = &Autoscaling{
 			Enabled: types.BoolValue(service.ServiceDetails.Autoscaling.Enabled),
-			Min:     types.Int64Value(int64(service.ServiceDetails.Autoscaling.Min)),
-			Max:     types.Int64Value(int64(service.ServiceDetails.Autoscaling.Max)),
+			Min:     types.Int64Value(service.ServiceDetails.Autoscaling.Min),
+			Max:     types.Int64Value(service.ServiceDetails.Autoscaling.Max),
 			Criteria: AutoscalingCriteria{
 				CPU: AutoscalingCriteriaObject{
 					Enabled:    types.BoolValue(service.ServiceDetails.Autoscaling.Criteria.CPU.Enabled),
-					Percentage: types.Int64Value(int64(service.ServiceDetails.Autoscaling.Criteria.CPU.Percentage)),
+					Percentage: types.Int64Value(service.ServiceDetails.Autoscaling.Criteria.CPU.Percentage),
 				},
 				Memory: AutoscalingCriteriaObject{
 					Enabled:    types.BoolValue(service.ServiceDetails.Autoscaling.Criteria.Memory.Enabled),
-					Percentage: types.Int64Value(int64(service.ServiceDetails.Autoscaling.Criteria.Memory.Percentage)),
+					Percentage: types.Int64Value(service.ServiceDetails.Autoscaling.Criteria.Memory.Percentage),
 				},
 			},
 		}
