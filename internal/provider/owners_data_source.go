@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -13,7 +10,6 @@ import (
 	"github.com/sonlir/render-client-go"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
 var (
 	_ datasource.DataSource              = &OwnersDataSource{}
 	_ datasource.DataSourceWithConfigure = &OwnersDataSource{}
@@ -27,8 +23,9 @@ type OwnersDataSource struct {
 	client *render.Client
 }
 
-// OwnersDataSourceModel describes the data source data model.
 type OwnersDataSourceModel struct {
+	Name   types.String           `tfsdk:"name"`
+	Email  types.String           `tfsdk:"email"`
 	Owners []OwnerDataSourceModel `tfsdk:"owners"`
 }
 
@@ -38,7 +35,6 @@ func (d *OwnersDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *OwnersDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "This endpoint lists all users and teams that your API key has access to. This can be helpful for getting the correct ownerId to use for creating new resources, such as services.",
 		Attributes: map[string]schema.Attribute{
 			"owners": schema.ListNestedAttribute{
@@ -58,18 +54,25 @@ func (d *OwnersDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 							Computed:            true,
 						},
 						"type": schema.StringAttribute{
-							MarkdownDescription: "The type. Valid values are `user` or `team`",
+							MarkdownDescription: "The type. Valid values are user or team",
 							Computed:            true,
 						},
 					},
 				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Filter by name of the`user or team",
+				Optional:            true,
+			},
+			"email": schema.StringAttribute{
+				MarkdownDescription: "Filter by email of the user or team",
+				Optional:            true,
 			},
 		},
 	}
 }
 
 func (d *OwnersDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -91,8 +94,12 @@ func (d *OwnersDataSource) Configure(ctx context.Context, req datasource.Configu
 func (d *OwnersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state OwnersDataSourceModel
 
-	// Read Render data into the model
-	owners, err := d.client.GetOwners()
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	owners, err := d.client.GetOwners(&render.GetOwnersArgs{Name: state.Name.ValueString(), Email: state.Email.ValueString()})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read Render Owners",
@@ -101,18 +108,16 @@ func (d *OwnersDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	// Write Render data into the model
-	for _, owner := range *owners {
+	for _, owner := range owners {
 		ownerState := OwnerDataSourceModel{
-			ID:    types.StringValue(owner.Owner.ID),
-			Name:  types.StringValue(owner.Owner.Name),
-			Email: types.StringValue(owner.Owner.Email),
-			Type:  types.StringValue(owner.Owner.Type),
+			ID:    types.StringValue(owner.ID),
+			Name:  types.StringValue(owner.Name),
+			Email: types.StringValue(owner.Email),
+			Type:  types.StringValue(owner.Type),
 		}
 		state.Owners = append(state.Owners, ownerState)
 	}
 
-	// Save data into Terraform state
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

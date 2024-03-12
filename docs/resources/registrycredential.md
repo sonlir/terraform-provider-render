@@ -30,7 +30,7 @@ resource "render_registrycredential" "example" {
 - `auth_token` (String, Sensitive) The auth token associated with the credential
 - `name` (String) Descriptive name for this credential
 - `owner_id` (String) The owner id associated with the credential
-- `registry` (String) The registry to use this credential with. Valid values are GITHUB, GITLAB, DOCKER.
+- `registry` (String) The registry to use this credential with. Valid values are `GITHUB`, `GITLAB`, `DOCKER`.
 - `username` (String) The username associated with the credential
 
 ### Read-Only

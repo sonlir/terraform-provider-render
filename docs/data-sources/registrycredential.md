@@ -28,5 +28,5 @@ data "render_registrycredential" "example" {
 ### Read-Only
 
 - `name` (String) Descriptive name for this credential
-- `registry` (String) The registry to use this credential with. Valid values are GITHUB, GITLAB, DOCKER.
+- `registry` (String) The registry to use this credential with. Valid values are `GITHUB`, `GITLAB`, `DOCKER`.
 - `username` (String) The username associated with the credential

@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -13,7 +10,6 @@ import (
 	"github.com/sonlir/render-client-go"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
 var (
 	_ datasource.DataSource              = &OwnerDataSource{}
 	_ datasource.DataSourceWithConfigure = &OwnerDataSource{}
@@ -27,7 +23,6 @@ type OwnerDataSource struct {
 	client *render.Client
 }
 
-// OwnerDataSourceModel describes the data source data model.
 type OwnerDataSourceModel struct {
 	ID    types.String `tfsdk:"id"`
 	Name  types.String `tfsdk:"name"`
@@ -41,7 +36,6 @@ func (d *OwnerDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 
 func (d *OwnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "This endpoint gets information for a specific user or team that your API key has permission to access, based on ownerId.",
 
 		Attributes: map[string]schema.Attribute{
@@ -66,7 +60,6 @@ func (d *OwnerDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 }
 
 func (d *OwnerDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -88,13 +81,11 @@ func (d *OwnerDataSource) Configure(ctx context.Context, req datasource.Configur
 func (d *OwnerDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state OwnerDataSourceModel
 
-	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Read Render data into the model
 	owner, err := d.client.GetOwner(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -104,13 +95,11 @@ func (d *OwnerDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	// Write Render data into the model
 	state.ID = types.StringValue(owner.ID)
 	state.Name = types.StringValue(owner.Name)
 	state.Email = types.StringValue(owner.Email)
 	state.Type = types.StringValue(owner.Type)
 
-	// Save data into Terraform state
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

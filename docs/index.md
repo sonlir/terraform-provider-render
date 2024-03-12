@@ -25,4 +25,4 @@ provider "render" {
 
 ### Optional
 
-- `api_key` (String, Sensitive) The Render API key to use for authentication. May also be provided via RENDER_API_KEY environment variable.
+- `api_key` (String, Sensitive) The Render API key to use for authentication. May also be provided via `RENDER_API_KEY` environment variable.
