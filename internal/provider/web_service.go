@@ -271,9 +271,9 @@ func (r *WebService) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 					},
 					"docker_details": schema.SingleNestedAttribute{
 						MarkdownDescription: "The environment specific details for the service",
-						//Optional:            true,
-						Computed:      true,
-						PlanModifiers: []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+						Optional:            true,
+						Computed:            true,
+						PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 						Attributes: map[string]schema.Attribute{
 							"docker_command": schema.StringAttribute{
 								MarkdownDescription: "The docker command for the service",
