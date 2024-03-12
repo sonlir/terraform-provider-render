@@ -105,12 +105,12 @@ func (r *RegistryCredential) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	data := render.RegistryCredentialData{
+	data := render.RegistryCredential{
 		Name:      plan.Name.ValueString(),
 		Registry:  plan.Registry.ValueString(),
 		Username:  plan.Username.ValueString(),
-		AuthToken: plan.AuthToken.ValueString(),
-		OwnerId:   plan.OwnerId.ValueString(),
+		AuthToken: plan.AuthToken.ValueStringPointer(),
+		OwnerId:   plan.OwnerId.ValueStringPointer(),
 	}
 
 	registryCredential, err := r.client.CreateRegistryCredential(data)
@@ -180,12 +180,12 @@ func (r *RegistryCredential) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	data := render.RegistryCredentialData{
+	data := render.RegistryCredential{
 		Name:      plan.Name.ValueString(),
 		Registry:  plan.Registry.ValueString(),
 		Username:  plan.Username.ValueString(),
-		AuthToken: plan.AuthToken.ValueString(),
-		OwnerId:   plan.OwnerId.ValueString(),
+		AuthToken: plan.AuthToken.ValueStringPointer(),
+		OwnerId:   plan.OwnerId.ValueStringPointer(),
 	}
 
 	registryCredential, err := r.client.UpdateRegistryCredential(state.ID.ValueString(), data)

@@ -24,6 +24,7 @@ type RegistryCredentialsDataSource struct {
 }
 
 type RegistryCredentialsDataSourceModel struct {
+	Name                types.String                        `tfsdk:"name"`
 	RegistryCredentials []RegistryCredentialDataSourceModel `tfsdk:"registrycredentials"`
 }
 
@@ -41,7 +42,7 @@ func (d *RegistryCredentialsDataSource) Schema(ctx context.Context, req datasour
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
 							MarkdownDescription: "Unique identifier for this credential",
-							Required:            true,
+							Computed:            true,
 						},
 						"name": schema.StringAttribute{
 							MarkdownDescription: "Descriptive name for this credential",
@@ -57,6 +58,10 @@ func (d *RegistryCredentialsDataSource) Schema(ctx context.Context, req datasour
 						},
 					},
 				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the registry credential to filter by.",
+				Optional:            true,
 			},
 		},
 	}
@@ -84,7 +89,12 @@ func (d *RegistryCredentialsDataSource) Configure(ctx context.Context, req datas
 func (d *RegistryCredentialsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state RegistryCredentialsDataSourceModel
 
-	registryCredentials, err := d.client.GetRegistryCredentials()
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	registryCredentials, err := d.client.GetRegistryCredentials(&render.GetRegistryCredentialsArgs{Name: state.Name.ValueString()})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read Render RegistryCredentials",
@@ -93,7 +103,7 @@ func (d *RegistryCredentialsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	for _, registryCredential := range *registryCredentials {
+	for _, registryCredential := range registryCredentials {
 		registryCredentialState := RegistryCredentialDataSourceModel{
 			ID:       types.StringValue(registryCredential.ID),
 			Name:     types.StringValue(registryCredential.Name),

@@ -24,6 +24,8 @@ type OwnersDataSource struct {
 }
 
 type OwnersDataSourceModel struct {
+	Name   types.String           `tfsdk:"name"`
+	Email  types.String           `tfsdk:"email"`
 	Owners []OwnerDataSourceModel `tfsdk:"owners"`
 }
 
@@ -52,11 +54,19 @@ func (d *OwnersDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 							Computed:            true,
 						},
 						"type": schema.StringAttribute{
-							MarkdownDescription: "The type. Valid values are `user` or `team`",
+							MarkdownDescription: "The type. Valid values are user or team",
 							Computed:            true,
 						},
 					},
 				},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Filter by name of the`user or team",
+				Optional:            true,
+			},
+			"email": schema.StringAttribute{
+				MarkdownDescription: "Filter by email of the user or team",
+				Optional:            true,
 			},
 		},
 	}
@@ -84,7 +94,12 @@ func (d *OwnersDataSource) Configure(ctx context.Context, req datasource.Configu
 func (d *OwnersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state OwnersDataSourceModel
 
-	owners, err := d.client.GetOwners()
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	owners, err := d.client.GetOwners(&render.GetOwnersArgs{Name: state.Name.ValueString(), Email: state.Email.ValueString()})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read Render Owners",
@@ -93,12 +108,12 @@ func (d *OwnersDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	for _, owner := range *owners {
+	for _, owner := range owners {
 		ownerState := OwnerDataSourceModel{
-			ID:    types.StringValue(owner.Owner.ID),
-			Name:  types.StringValue(owner.Owner.Name),
-			Email: types.StringValue(owner.Owner.Email),
-			Type:  types.StringValue(owner.Owner.Type),
+			ID:    types.StringValue(owner.ID),
+			Name:  types.StringValue(owner.Name),
+			Email: types.StringValue(owner.Email),
+			Type:  types.StringValue(owner.Type),
 		}
 		state.Owners = append(state.Owners, ownerState)
 	}

@@ -23,7 +23,8 @@ type WebServicesDataSource struct {
 	client *render.Client
 }
 
-type WebServicesDetailsDataSource struct {
+type WebServicesDataSourceModel struct {
+	Name        types.String             `tfsdk:"name"`
 	WebServices []ServiceDataSourceModel `tfsdk:"web_services"`
 }
 
@@ -63,25 +64,6 @@ func (d *WebServicesDataSource) Schema(ctx context.Context, req datasource.Schem
 							MarkdownDescription: "The branch of the service. If left empty, this will fall back to the default branch of the repository",
 							Computed:            true,
 						},
-						// Commented because Render REST API does not return these fields
-						// "image": schema.SingleNestedAttribute{
-						// 	MarkdownDescription: "The image used for this server",
-						// 	Computed:            true,
-						// 	Attributes: map[string]schema.Attribute{
-						// 		"owner_id": schema.StringAttribute{
-						// 			MarkdownDescription: "The ID of the owner for this image. This should match the owner of the service as well as the owner of any specified registry credential.",
-						// 			Computed:            true,
-						// 		},
-						// 		"registry_credential_id": schema.StringAttribute{
-						// 			MarkdownDescription: "Optional reference to the registry credential passed to the image repository to retrieve this image.",
-						// 			Computed:            true,
-						// 		},
-						// 		"image_path": schema.StringAttribute{
-						// 			MarkdownDescription: "Path to the image used for this server e.g `docker.io/library/nginx:latest`.",
-						// 			Computed:            true,
-						// 		},
-						// 	},
-						// },
 						"build_filter": schema.SingleNestedAttribute{
 							MarkdownDescription: "The build filter for this service",
 							Computed:            true,
@@ -99,6 +81,22 @@ func (d *WebServicesDataSource) Schema(ctx context.Context, req datasource.Schem
 						"root_dir": schema.StringAttribute{
 							MarkdownDescription: "The root directory of the service",
 							Computed:            true,
+						},
+						"environment_variables": schema.ListNestedAttribute{
+							MarkdownDescription: "The environment variables for the service",
+							Computed:            true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"key": schema.StringAttribute{
+										MarkdownDescription: "The key of the environment variable",
+										Computed:            true,
+									},
+									"value": schema.StringAttribute{
+										MarkdownDescription: "The value of the environment variable",
+										Computed:            true,
+									},
+								},
+							},
 						},
 						"service_details": schema.SingleNestedAttribute{
 							MarkdownDescription: "The service details for the service",
@@ -172,14 +170,23 @@ func (d *WebServicesDataSource) Schema(ctx context.Context, req datasource.Schem
 											MarkdownDescription: "The ID of the disk",
 											Computed:            true,
 										},
+										"mount_path": schema.StringAttribute{
+											MarkdownDescription: "The mount path of the disk",
+											Computed:            true,
+										},
+										"size_gb": schema.Int64Attribute{
+											MarkdownDescription: "The size of the disk in GB",
+											Computed:            true,
+										},
 									},
 								},
 								"env": schema.StringAttribute{
 									MarkdownDescription: "Environment (runtime)",
 									Computed:            true,
 								},
-								"env_specific_details": schema.SingleNestedAttribute{
-									MarkdownDescription: "The environment specific details for the service",
+
+								"docker_details": schema.SingleNestedAttribute{
+									MarkdownDescription: "The docker details for the service",
 									Computed:            true,
 									Attributes: map[string]schema.Attribute{
 										"docker_command": schema.StringAttribute{
@@ -191,41 +198,33 @@ func (d *WebServicesDataSource) Schema(ctx context.Context, req datasource.Schem
 											Computed:            true,
 										},
 										"dockerfile_path": schema.StringAttribute{
-											MarkdownDescription: "The dockerfile path for the service.",
+											MarkdownDescription: "The dockerfile path for the service",
 											Computed:            true,
 										},
 										"pre_deploy_command": schema.StringAttribute{
 											MarkdownDescription: "The pre-deploy command for the service",
 											Computed:            true,
 										},
-										"registry_credential": schema.SingleNestedAttribute{
-											MarkdownDescription: "The registry credential for the service",
+										"registry_credential_id": schema.StringAttribute{
+											MarkdownDescription: "The registry credential ID for the service",
 											Computed:            true,
-											Attributes: map[string]schema.Attribute{
-												"id": schema.StringAttribute{
-													MarkdownDescription: "Unique identifier for this credential",
-													Computed:            true,
-												},
-												"name": schema.StringAttribute{
-													MarkdownDescription: "Descriptive name for this credential",
-													Computed:            true,
-												},
-												"registry": schema.StringAttribute{
-													MarkdownDescription: "The registry to use this credential with. Valid values are `GITHUB`, `GITLAB`, `DOCKER`.",
-													Computed:            true,
-												},
-												"username": schema.StringAttribute{
-													MarkdownDescription: "The username associated with the credential",
-													Computed:            true,
-												},
-											},
 										},
+									},
+								},
+								"native_environment_details": schema.SingleNestedAttribute{
+									MarkdownDescription: "The native environment details for the service",
+									Computed:            true,
+									Attributes: map[string]schema.Attribute{
 										"build_command": schema.StringAttribute{
 											MarkdownDescription: "The build command for the service",
 											Computed:            true,
 										},
 										"start_command": schema.StringAttribute{
 											MarkdownDescription: "The start command for the service",
+											Computed:            true,
+										},
+										"pre_deploy_command": schema.StringAttribute{
+											MarkdownDescription: "The pre-deploy command for the service",
 											Computed:            true,
 										},
 									},
@@ -317,6 +316,10 @@ func (d *WebServicesDataSource) Schema(ctx context.Context, req datasource.Schem
 					},
 				},
 			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the web service to filter by.",
+				Optional:            true,
+			},
 		},
 	}
 
@@ -342,15 +345,14 @@ func (d *WebServicesDataSource) Configure(ctx context.Context, req datasource.Co
 }
 
 func (d *WebServicesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state WebServicesDetailsDataSource
-	var webServiceDetails WebServiceDetailsDataSource
+	var state WebServicesDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	services, err := d.client.GetServices("web_service")
+	services, err := d.client.GetServices(&render.GetServicesArgs{Name: state.Name.ValueString(), Type: "web_service"})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read Render Web Services",
@@ -359,85 +361,13 @@ func (d *WebServicesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	for _, service := range *services {
-		webService := ServiceDataSourceModel{
-			ID:           types.StringValue(service.Service.ID),
-			AutoDeploy:   types.StringValue(service.Service.AutoDeploy),
-			Branch:       types.StringValue(service.Service.Branch),
-			CreateAt:     types.StringValue(service.Service.CreateAt.String()),
-			ImagePath:    types.StringValue(service.Service.ImagePath),
-			Name:         types.StringValue(service.Service.Name),
-			NotifyOnFail: types.StringValue(service.Service.NotifyOnFail),
-			OwnerId:      types.StringValue(service.Service.OwnerId),
-			Repo:         types.StringValue(service.Service.Repo),
-			RootDir:      types.StringValue(service.Service.RootDir),
-			Slug:         types.StringValue(service.Service.Slug),
-			Suspended:    types.StringValue(service.Service.Suspended),
-			Type:         types.StringValue(service.Service.Type),
-			UpdatedAt:    types.StringValue(service.Service.UpdatedAt.String()),
-		}
-		if len(service.Service.BuildFilter.Paths) != 0 {
-			for _, path := range service.Service.BuildFilter.Paths {
-				webService.BuildFilter.Paths = append(webService.BuildFilter.Paths, types.StringValue(path))
-			}
-		}
-		if len(service.Service.BuildFilter.IgnoredPaths) != 0 {
-			for _, ignoredPath := range service.Service.BuildFilter.IgnoredPaths {
-				webService.BuildFilter.IgnoredPaths = append(webService.BuildFilter.IgnoredPaths, types.StringValue(ignoredPath))
-			}
-		}
-		for _, suspender := range service.Service.Suspenders {
-			webService.Suspenders = append(webService.Suspenders, types.StringValue(suspender))
-		}
-
-		webServiceDetails.NumInstances = types.Int64Value(int64(service.Service.ServiceDetails.NumInstances))
-		webServiceDetails.Env = types.StringValue(service.Service.ServiceDetails.Env)
-		webServiceDetails.HealthCheckPath = types.StringValue(service.Service.ServiceDetails.HealthCheckPath)
-		webServiceDetails.Plan = types.StringValue(service.Service.ServiceDetails.Plan)
-		webServiceDetails.PullRequestPreviewsEnabled = types.StringValue(service.Service.ServiceDetails.PullRequestPreviewsEnabled)
-		webServiceDetails.Region = types.StringValue(service.Service.ServiceDetails.Region)
-		webServiceDetails.Url = types.StringValue(service.Service.ServiceDetails.Url)
-		for _, openPort := range service.Service.ServiceDetails.OpenPorts {
-			webServiceDetails.OpenPorts = append(webServiceDetails.OpenPorts, OpenPort{
-				Port:     types.Int64Value(int64(openPort.Port)),
-				Protocol: types.StringValue(openPort.Protocol),
-			})
-		}
-		if service.Service.ServiceDetails.ParentServer.ID != "" {
-			webServiceDetails.ParentServer.ID = types.StringValue(service.Service.ServiceDetails.ParentServer.ID)
-			webServiceDetails.ParentServer.Name = types.StringValue(service.Service.ServiceDetails.ParentServer.Name)
-		}
-		if service.Service.ServiceDetails.EnvSpecificDetails.DockerCommand != "" || service.Service.ServiceDetails.EnvSpecificDetails.DockerContext != "" || service.Service.ServiceDetails.EnvSpecificDetails.DockerfilePath != "" || service.Service.ServiceDetails.EnvSpecificDetails.PreDeployCommand != "" || service.Service.ServiceDetails.EnvSpecificDetails.BuildCommand != "" || service.Service.ServiceDetails.EnvSpecificDetails.StartCommand != "" {
-			webServiceDetails.EnvSpecificDetails.DockerCommand = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.DockerCommand)
-			webServiceDetails.EnvSpecificDetails.DockerContext = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.DockerContext)
-			webServiceDetails.EnvSpecificDetails.DockerfilePath = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.DockerfilePath)
-			webServiceDetails.EnvSpecificDetails.PreDeployCommand = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.PreDeployCommand)
-			webServiceDetails.EnvSpecificDetails.BuildCommand = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.BuildCommand)
-			webServiceDetails.EnvSpecificDetails.StartCommand = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.StartCommand)
-			if service.Service.ServiceDetails.EnvSpecificDetails.RegistryCredential.ID != "" {
-				webServiceDetails.EnvSpecificDetails.RegistryCredential.ID = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.RegistryCredential.ID)
-				webServiceDetails.EnvSpecificDetails.RegistryCredential.Name = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.RegistryCredential.Name)
-				webServiceDetails.EnvSpecificDetails.RegistryCredential.Registry = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.RegistryCredential.Registry)
-				webServiceDetails.EnvSpecificDetails.RegistryCredential.Username = types.StringValue(service.Service.ServiceDetails.EnvSpecificDetails.RegistryCredential.Username)
-			}
-		}
-		if service.Service.ServiceDetails.Disk.Id != "" {
-			webServiceDetails.Disk.ID = types.StringValue(service.Service.ServiceDetails.Disk.Id)
-			webServiceDetails.Disk.Name = types.StringValue(service.Service.ServiceDetails.Disk.Name)
-		}
-		if service.Service.ServiceDetails.Autoscaling.Enabled {
-			webServiceDetails.Autoscaling.Enabled = types.BoolValue(service.Service.ServiceDetails.Autoscaling.Enabled)
-			webServiceDetails.Autoscaling.Min = types.Int64Value(int64(service.Service.ServiceDetails.Autoscaling.Min))
-			webServiceDetails.Autoscaling.Max = types.Int64Value(int64(service.Service.ServiceDetails.Autoscaling.Max))
-			webServiceDetails.Autoscaling.Criteria.CPU.Enabled = types.BoolValue(service.Service.ServiceDetails.Autoscaling.Criteria.CPU.Enabled)
-			webServiceDetails.Autoscaling.Criteria.CPU.Percentage = types.Int64Value(int64(service.Service.ServiceDetails.Autoscaling.Criteria.CPU.Percentage))
-			webServiceDetails.Autoscaling.Criteria.Memory.Enabled = types.BoolValue(service.Service.ServiceDetails.Autoscaling.Criteria.Memory.Enabled)
-			webServiceDetails.Autoscaling.Criteria.Memory.Percentage = types.Int64Value(int64(service.Service.ServiceDetails.Autoscaling.Criteria.Memory.Percentage))
-		}
-
-		webService.ServiceDetails = webServiceDetails
+	for _, service := range services {
+		webService := ServiceDataSourceModel{}
+		webService.ID = types.StringValue(service.ID)
+		makeWebServiceDataSourceModel(&webService, &service)
 		state.WebServices = append(state.WebServices, webService)
 	}
+
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

@@ -105,6 +105,7 @@ func (p *RenderProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *RenderProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewRegistryCredential,
+		NewWebService,
 	}
 }
 
